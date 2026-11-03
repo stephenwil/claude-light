@@ -1,6 +1,7 @@
 # Claude Light
 
-An ESP32-S3 with a WS2812 LED that lights up when Claude Code is waiting on you.
+An ESP32-S3 dev board whose onboard WS2812 RGB LED lights up when Claude Code
+is waiting on you. No extra hardware or wiring: the LED is already on the board.
 
 ## Why
 
@@ -10,21 +11,42 @@ for you: to answer a question, to approve a command, or because it has
 finished. Unless you keep checking the terminal, that waiting time is lost,
 and with several sessions open it's easy to forget one entirely.
 
-Claude Light moves that signal off the screen and onto your desk. One glance
-tells you whether Claude is waiting, why, and roughly for how long. The longer
+Claude Light moves that signal off the screen and onto the dev board's
+built-in LED. One glance tells you whether Claude is waiting, why, and roughly for how long. The longer
 it's ignored, the more "agitated" it looks, so a session that's been stuck for
 twenty minutes is hard to miss. When nothing needs you, it stays dark.
 
 It's also a small, complete example of wiring Claude Code
 [hooks](https://code.claude.com/docs/en/hooks) to physical hardware.
 
-## What it shows
+## LED states
 
-- **Colour = why:** purple question, amber permission prompt, blue finished.
-- **Animation = how long:** calm breathing (0–1 min) → nudging (1–5) →
-  agitated pulses (5–15) → frantic strobe drifting to red (15+).
-- Several sessions? It shows the longest-waiting one and double-blinks.
-- Faint white blip every 3 s = board is offline from Wi-Fi.
+### Colour: why Claude is waiting
+
+| LED | Meaning | Goes off when |
+|---|---|---|
+| 🟣 **Purple** | Claude asked you a question | you answer |
+| 🟠 **Amber** | Claude needs permission to run a command or edit a file | you allow or deny |
+| 🔵 **Blue** | Claude finished its turn and is waiting for your next message | you reply |
+
+### Animation: how long it's been waiting
+
+Every colour escalates the same way.
+
+| Waiting | Stage | What the LED does |
+|---|---|---|
+| 0 – 1 min | 😌 Calm | dim, slow breathing (one breath every 4 s) |
+| 1 – 5 min | 🙂 Nudging | brighter, quicker breathing (every 1.5 s) |
+| 5 – 15 min | 😠 Agitated | bright, sharp pulses, twice a second |
+| 15 min + | 😡 Frantic | full-brightness strobe, colour drifting to 🔴 red over 5 min |
+
+### Other states
+
+| LED | Meaning |
+|---|---|
+| ⚫ **Off** | nothing is waiting on you |
+| ✨ **Double-blink every 4 s** | two or more sessions are waiting; the LED shows the one waiting longest |
+| ⚪ **Faint white blip every 3 s** | the board has lost Wi-Fi and is reconnecting |
 
 Design: `docs/superpowers/specs/2026-11-03-claude-light-design.md`.
 Shareable guide to the light: `docs/infographic.html`.
