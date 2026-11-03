@@ -1,0 +1,5 @@
+board/secrets.py
+__pycache__/
+*.pyc
+.pytest_cache/
+*.bin
