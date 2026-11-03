@@ -31,8 +31,8 @@ time waiting. Full design: `docs/superpowers/specs/2026-11-03-claude-light-desig
 ## Commands
 
 - Tests: `python -m pytest`
-- Upload files: `mpremote connect COM5 cp -r board/. :` (check the COM port first)
-- Serial REPL: `mpremote connect COM5`
+- Upload files: `mpremote connect COM6 cp -r board/. :` (check the COM port first)
+- Serial REPL: `mpremote connect COM6` (MicroPython shows as COM6; esptool/bootloader as COM5)
 - Board debug: `curl http://claude-light.local/`
 - Fake event: `curl -X POST http://claude-light.local/event -d '{"session":"t1","state":"question"}'`
 

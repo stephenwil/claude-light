@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Light Signals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* One visual world: a dark desk at night, so the LED glows read true. */
+  /* Layout: header, then a reasons row, a stages ladder, and a specials row. */
+  --bg: #0d0f14;
+  --panel: #151922;
+  --line: #262c3a;
+  --ink: #e9ecf3;
+  --muted: #8f97a9;
+  --question: rgb(160, 0, 255);
+  --permission: rgb(255, 120, 0);
+  --finished: rgb(0, 70, 255);
+  --red: rgb(255, 0, 0);
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.5 var(--body);
+  padding: 40px 20px 56px;
+}
+.wrap { max-width: 980px; margin: 0 auto; display: grid; gap: 44px; }
+header { display: grid; gap: 10px; }
+.kicker { font: 500 13px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font: 800 clamp(32px, 6vw, 52px)/1.05 var(--display); margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+.lede { margin: 0; max-width: 62ch; color: var(--muted); font-size: 17px; }
+h2 { font: 700 21px/1.2 var(--display); margin: 0 0 4px; text-wrap: balance; }
+.sub { margin: 0 0 18px; color: var(--muted); max-width: 62ch; }
+
+/* LED dot */
+.led {
+  --c: var(--ink);
+  width: 46px; height: 46px; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 38% 34%, #fff 0 6%, var(--c) 34%, color-mix(in srgb, var(--c) 55%, #000) 100%);
+  box-shadow: 0 0 22px 6px color-mix(in srgb, var(--c) 55%, transparent), 0 0 60px 14px color-mix(in srgb, var(--c) 22%, transparent);
+}
+.led.big { width: 58px; height: 58px; }
+
+/* Reasons */
+.reasons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: flex; gap: 18px; align-items: center; }
+.card h3 { margin: 0; font: 700 18px/1.2 var(--display); }
+.card p { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
+.tag { display: inline-block; margin-top: 8px; font: 500 12px/1 var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 5px 9px; }
+
+/* Stages ladder */
+.ladder { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--panel); }
+.stage { padding: 22px 18px 20px; display: grid; gap: 12px; align-content: start; border-left: 1px solid var(--line); }
+.stage:first-child { border-left: 0; }
+.stage .time { font: 500 13px/1 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.stage h3 { margin: 0; font: 700 19px/1.2 var(--display); }
+.stage p { margin: 0; color: var(--muted); font-size: 14.5px; }
+.stage .meter { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.stage .meter i { display: block; height: 100%; background: linear-gradient(90deg, var(--question), var(--red)); }
+.stage .dot-row { display: flex; gap: 14px; align-items: center; min-height: 64px; }
+
+/* Specials */
+.specials { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+
+/* Animations (page-safe rates; the real LED runs faster in Frantic) */
+@keyframes breathe { 0%, 100% { opacity: .08; } 50% { opacity: var(--peak, 1); } }
+@keyframes pulse { 0%, 60%, 100% { opacity: .05; } 20% { opacity: var(--peak, 1); } }
+@keyframes strobe { 0%, 49% { opacity: 1; } 50%, 100% { opacity: .05; } }
+@keyframes toRed { 0% { --c: var(--base); } 100% { --c: var(--red); } }
+@keyframes redshift { 0%, 100% { filter: hue-rotate(0deg); } 50% { filter: hue-rotate(var(--shift, 60deg)); } }
+@keyframes dbl { 0%, 4%, 8%, 100% { opacity: .15; } 2%, 6% { opacity: 1; } 10% { opacity: .15; } }
+@keyframes blip { 0%, 3% { opacity: .55; } 4%, 100% { opacity: 0; } }
+
+.calm { --peak: .35; animation: breathe 4s ease-in-out infinite; }
+.nudging { --peak: .6; animation: breathe 1.5s ease-in-out infinite; }
+.agitated { --peak: .85; animation: pulse .5s ease-out infinite; }
+.frantic { animation: strobe .4s steps(1) infinite; }
+.frantic-red { --c: var(--red); }
+.multi { animation: dbl 4s linear infinite; }
+.offline { --c: #cfd3dc; animation: blip 3s linear infinite; }
+.off { --c: #2a2f3b; box-shadow: none; background: radial-gradient(circle at 38% 34%, #3a4050 0 8%, #20242e 60%); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--muted); font-size: 14px; }
+.legend b { color: var(--ink); font-weight: 500; }
+footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--line); padding-top: 18px; display: flex; flex-wrap: wrap; gap: 6px 22px; }
+footer code { font: 500 12.5px var(--mono); color: var(--ink); }
+
+@media (max-width: 820px) {
+  .reasons, .specials { grid-template-columns: 1fr; }
+  .ladder { grid-template-columns: 1fr 1fr; }
+  .stage:nth-child(3) { border-left: 0; }
+  .stage:nth-child(n+3) { border-top: 1px solid var(--line); }
+}
+@media (max-width: 440px) {
+  .ladder { grid-template-columns: 1fr; }
+  .stage { border-left: 0; }
+  .stage + .stage { border-top: 1px solid var(--line); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .led { animation: none !important; }
+  .calm { opacity: .35; } .nudging { opacity: .6; } .agitated { opacity: .85; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">Claude Light · ESP32-S3 · WS2812 on GPIO48</div>
+  <h1>What the light is telling you</h1>
+  <p class="lede">A small LED on the desk that lights up when Claude Code is waiting on you. The colour says why it's waiting. The animation says how long it's been.</p>
+</header>
+
+<section>
+  <h2>Colour: why Claude is waiting</h2>
+  <p class="sub">Answer it and the light goes off.</p>
+  <div class="reasons">
+    <div class="card">
+      <div class="led big calm" style="--c: var(--question); --peak: .9"></div>
+      <div>
+        <h3>Purple: a question</h3>
+        <p>Claude asked you something and needs an answer to carry on.</p>
+        <span class="tag">clears when you answer</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="led big calm" style="--c: var(--permission); --peak: .9"></div>
+      <div>
+        <h3>Amber: permission</h3>
+        <p>Claude wants to run a command or edit a file and needs your OK.</p>
+        <span class="tag">clears when you allow or deny</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="led big calm" style="--c: var(--finished); --peak: .9"></div>
+      <div>
+        <h3>Blue: finished</h3>
+        <p>Claude is done with its turn and is waiting for your next message.</p>
+        <span class="tag">clears when you reply</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Animation: how long it's been waiting</h2>
+  <p class="sub">Every colour escalates the same way. Leave it long enough and it turns red, whatever the reason.</p>
+  <div class="ladder">
+    <div class="stage">
+      <span class="time">0 – 1 min</span>
+      <div class="dot-row">
+        <div class="led calm" style="--c: var(--question)"></div>
+      </div>
+      <h3>Calm</h3>
+      <p>Dim, slow breathing. One breath every 4 seconds.</p>
+      <div class="meter"><i style="width: 10%"></i></div>
+    </div>
+    <div class="stage">
+      <span class="time">1 – 5 min</span>
+      <div class="dot-row">
+        <div class="led nudging" style="--c: var(--question)"></div>
+      </div>
+      <h3>Nudging</h3>
+      <p>Brighter, quicker breathing, about every 1.5 seconds.</p>
+      <div class="meter"><i style="width: 35%"></i></div>
+    </div>
+    <div class="stage">
+      <span class="time">5 – 15 min</span>
+      <div class="dot-row">
+        <div class="led agitated" style="--c: var(--question)"></div>
+      </div>
+      <h3>Agitated</h3>
+      <p>Bright, sharp pulses, twice a second.</p>
+      <div class="meter"><i style="width: 65%"></i></div>
+    </div>
+    <div class="stage">
+      <span class="time">15 min +</span>
+      <div class="dot-row">
+        <div class="led frantic" style="--c: color-mix(in srgb, var(--question) 45%, var(--red))"></div>
+        <div class="led frantic frantic-red" style="animation-delay: .2s"></div>
+      </div>
+      <h3>Frantic</h3>
+      <p>Full-brightness strobe, drifting to red over the next 5 minutes.</p>
+      <div class="meter"><i style="width: 100%"></i></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Other things you might see</h2>
+  <p class="sub">The light always shows the session that has been waiting longest.</p>
+  <div class="specials">
+    <div class="card">
+      <div class="led big off"></div>
+      <div>
+        <h3>Off</h3>
+        <p>Nothing is waiting on you. Claude is working, or idle with nothing to ask.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="led big multi" style="--c: var(--finished)"></div>
+      <div>
+        <h3>Double-blink</h3>
+        <p>Two or more sessions are waiting. A quick double flash every 4 seconds.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="led big offline"></div>
+      <div>
+        <h3>Faint white blip</h3>
+        <p>The light has lost Wi-Fi and is reconnecting. One blip every 3 seconds.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>Animations here are slowed for the screen. The real Frantic strobe is faster.</span>
+  <span>Switch it off: create <code>~/.claude/claude-light.off</code></span>
+  <span>Sessions forgotten after 2 hours</span>
+</footer>
+
+</div>
+</body>
+</html>
