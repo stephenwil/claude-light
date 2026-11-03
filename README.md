@@ -127,9 +127,9 @@ Reach and integration:
 - **No Python on the PC.** Claude Code also supports HTTP hooks, which could
   POST straight to the board. The Python hook would then only be needed for
   the off switch and the offline back-off.
-- **Away from home.** Relay events to the board over a VPN such as Tailscale,
-  via an always-on machine at home, so sessions on a laptop elsewhere still
-  reach it.
+- **Away from home.** Reach the board over Tailscale so sessions on a laptop
+  elsewhere still light it up. See
+  [Sessions on other computers via Tailscale](#sessions-on-other-computers-via-tailscale).
 - **Home Assistant / MQTT.** Publish the waiting state so other smart-home
   devices can react: a smart bulb, a phone notification, a doorbell chime.
 - **A shared secret.** Add a simple token to the HTTP API if the board ever
@@ -138,6 +138,45 @@ Reach and integration:
   though Wi-Fi has to stay on, so expect hours, not days.
 - **5 GHz Wi-Fi.** Port to an ESP32-C5, the only ESP32 with dual-band Wi-Fi,
   once MicroPython supports it well.
+
+### Sessions on other computers via Tailscale
+
+Any computer on your home network can already drive the light: clone this
+repo there and add the same hooks. Session IDs are unique across machines,
+so the board tracks them all, shows the longest-waiting one, and double-blinks
+when several are waiting.
+
+Away from home, `claude-light.local` can't be reached. The board can't run
+[Tailscale](https://tailscale.com) itself (there's no MicroPython client), so
+an always-on machine at home that does run Tailscale passes the events on.
+There are two ways to set that up.
+
+**Option 1: subnet router (no code).**
+
+1. On the home machine, advertise your home network to your tailnet, for
+   example `tailscale up --advertise-routes=192.168.1.0/24`, and approve the
+   route in the Tailscale admin console.
+2. In your router, reserve a fixed IP address for the board. mDNS names like
+   `claude-light.local` don't travel over Tailscale, so remote machines need
+   the IP.
+3. On the remote computer, run `tailscale up --accept-routes`, clone this
+   repo, add the hooks, and set `CLAUDE_LIGHT_URL=http://<board-ip>/event`.
+
+This is the quickest route. The trade-offs are that the home machine has to be
+on, and every device on your tailnet can reach your whole home network.
+
+**Option 2: a small relay.**
+
+Run a tiny forwarder on the home machine that listens on its Tailscale name
+(for example `http://<home-machine>:8765/event`) and passes each event on to
+`claude-light.local`. Remote hooks point at that address. It doesn't expose
+the rest of your home network, the board keeps using mDNS, and the relay is a
+natural place to check a shared secret. The cost is one more small program to
+keep running. A Raspberry Pi makes a good always-on host for it.
+
+Either way, nothing else changes: if the laptop is offline or Tailscale is
+off, the hook backs off silently and Claude Code isn't slowed. Cloud sessions
+(claude.ai/code) can't reach your tailnet, so they won't drive the light.
 
 ## Tests
 
