@@ -32,3 +32,7 @@ HOSTNAME = 'claude-light'
 PORT = 80
 LED_PIN = 48
 FPS = 50
+
+# Animation clock wraps at this many ms. Must be a multiple of every period
+# above, so the wrap is seamless. Keeps t small: board floats are 32-bit.
+CYCLE_MS = 12000

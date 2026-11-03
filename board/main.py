@@ -30,9 +30,14 @@ def _stall_check(_t):
 
 async def render():
     period = 1 / config.FPS
+    phase_ms = 0
+    last = time.ticks_ms()
     while True:
-        _beat[0] = time.ticks_ms()
-        t = time.ticks_ms() / 1000
+        tick = time.ticks_ms()
+        _beat[0] = tick
+        phase_ms = (phase_ms + time.ticks_diff(tick, last)) % config.CYCLE_MS
+        last = tick
+        t = animate.anim_time(phase_ms)
         now = clock()
         sessions.expire(now)
         top = sessions.most_urgent(now)

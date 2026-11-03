@@ -93,14 +93,23 @@ def main(argv, stdin, env, home):
         if argv[:1] == ['--send'] and len(argv) >= 4:
             send(argv[1], argv[2].encode(), Path(argv[3]))
             return 0
-        if is_disabled(env, home) or in_backoff(home, time.time()):
+        if is_disabled(env, home):
             return 0
-        payload = json.loads(stdin.read() or '{}')
+        # Read raw bytes: piped stdin on Windows decodes as cp1252 and chokes
+        # on UTF-8 emoji. json.loads detects UTF-8 itself.
+        raw = stdin.buffer.read() if hasattr(stdin, 'buffer') else stdin.read()
+        payload = json.loads(raw or '{}')
         state = map_event(payload)
         session = payload.get('session_id')
         if not state or not session:
             return 0
-        body = json.dumps({'session': session, 'state': state, 't': time.time()})
+        # Back-off only skips new waiting states; clear/end always go, so the
+        # light can't be left stuck on.
+        if state not in ('clear', 'end') and in_backoff(home, time.time()):
+            return 0
+        # Integer ms: the board's floats are 32-bit and would round to ~128 s.
+        body = json.dumps({'session': session, 'state': state,
+                           't': time.time_ns() // 1_000_000})
         _spawn(env.get('CLAUDE_LIGHT_URL') or DEFAULT_URL, body, home)
     except Exception:
         pass

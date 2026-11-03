@@ -54,5 +54,9 @@ def frame(reason, waited_s, t, waiting_count=1):
     return _scale(colour, config.BRIGHTNESS[stage] * _envelope(stage, t))
 
 
+def anim_time(ms):
+    return (ms % config.CYCLE_MS) / 1000
+
+
 def offline_frame(t):
     return (8, 8, 8) if t % config.OFFLINE_EVERY_S < 0.1 else _OFF

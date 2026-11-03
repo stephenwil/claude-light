@@ -38,3 +38,13 @@ def test_multi_blink_inserts_dark_and_bright():
 def test_offline_frame_mostly_off():
     frames = [animate.offline_frame(i / 50) for i in range(int(config.OFFLINE_EVERY_S * 50))]
     assert sum(1 for f in frames if max(f) > 0) < len(frames) / 5
+
+def test_anim_time_stays_small_and_continuous():
+    # float32 on the board: keep t small so 0.1 s slots stay exact
+    assert animate.anim_time(10**9) < config.CYCLE_MS / 1000
+    assert animate.anim_time(config.CYCLE_MS + 250) == 0.25
+
+def test_cycle_is_multiple_of_every_period():
+    periods = list(config.PERIOD_S.values()) + [config.MULTI_EVERY_S, config.OFFLINE_EVERY_S]
+    for p in periods:
+        assert round(config.CYCLE_MS % round(p * 1000)) == 0, p

@@ -55,4 +55,26 @@ def test_main_body_carries_fire_time(tmp_path, monkeypatch):
     import json
     body = json.loads(sent[0])
     assert body['session'] == 's1' and body['state'] == 'finished'
-    assert t0 <= body['t'] <= time.time()
+    # integer milliseconds: MicroPython floats are 32-bit and would round ~128 s
+    assert isinstance(body['t'], int)
+    assert int(t0 * 1000) <= body['t'] <= int(time.time() * 1000)
+
+def _spy(monkeypatch):
+    sent = []
+    monkeypatch.setattr(h, '_spawn', lambda url, body, home: sent.append(body))
+    return sent
+
+def test_main_reads_utf8_bytes_not_console_codepage(tmp_path, monkeypatch):
+    sent = _spy(monkeypatch)
+    raw = '{"hook_event_name":"UserPromptSubmit","session_id":"s1","prompt":"hi 😁"}'.encode('utf-8')
+    stdin = io.TextIOWrapper(io.BytesIO(raw), encoding='cp1252')  # what Windows gives a piped hook
+    assert h.main([], stdin, {}, tmp_path) == 0
+    assert len(sent) == 1
+
+def test_clear_and_end_sent_even_in_backoff(tmp_path, monkeypatch):
+    sent = _spy(monkeypatch)
+    m = tmp_path / '.claude' / 'claude-light.offline'; m.parent.mkdir(); m.write_text(str(time.time()))
+    for ev in ('UserPromptSubmit', 'SessionEnd', 'Stop'):
+        h.main([], io.StringIO('{"hook_event_name":"%s","session_id":"s1"}' % ev), {}, tmp_path)
+    import json
+    assert [json.loads(b)['state'] for b in sent] == ['clear', 'end']
