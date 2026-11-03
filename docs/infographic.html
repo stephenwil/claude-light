@@ -55,7 +55,7 @@ h2 { font: 700 21px/1.2 var(--display); margin: 0 0 4px; text-wrap: balance; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: flex; gap: 18px; align-items: center; }
 .card h3 { margin: 0; font: 700 18px/1.2 var(--display); }
 .card p { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
-.tag { display: inline-block; margin-top: 8px; font: 500 12px/1 var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 5px 9px; }
+.tag { display: inline-block; margin-top: 8px; font: 500 12px/1 var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 5px 9px; line-height: 1.35; }
 
 /* Stages ladder */
 .ladder { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--panel); }
@@ -107,7 +107,7 @@ footer code { font: 500 12.5px var(--mono); color: var(--ink); }
 }
 @media (prefers-reduced-motion: reduce) {
   .led { animation: none !important; }
-  .calm { opacity: .35; } .nudging { opacity: .6; } .agitated { opacity: .85; }
+  .calm, .nudging, .agitated { opacity: var(--peak, 1); }
 }
 </style>
 </head>

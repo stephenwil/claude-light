@@ -27,6 +27,12 @@ It's also a small, complete example of wiring Claude Code
 
 ## LED states
 
+![Infographic of the LED states: colour shows why Claude is waiting, animation shows how long](docs/images/infographic.png)
+
+*The source is [`docs/infographic.html`](docs/infographic.html), an animated
+version you can open in a browser. Download it and open it locally to see each
+state move.*
+
 ### Colour: why Claude is waiting
 
 | LED | Meaning | Goes off when |
