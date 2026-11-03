@@ -11,7 +11,10 @@ time waiting. Full design: `docs/superpowers/specs/2026-11-03-claude-light-desig
   `sessions.py` and `animate.py` must stay hardware-free (no `machine`,
   `neopixel`, `network` imports) so they run under CPython for tests.
 - `hooks/claude_light_hook.py` — Claude Code hook (stdlib-only Python). Must
-  always exit 0, print nothing, and time out within ~1 s.
+  always exit 0, print nothing, and never wait on the network: it hands the
+  POST to a detached background process and returns immediately.
+  Off switches: `~/.claude/claude-light.off` file or `CLAUDE_LIGHT=off`.
+  Offline back-off marker: `~/.claude/claude-light.offline` (60 s).
 - `tests/` — pytest unit tests, run on the PC.
 
 ## Hardware facts

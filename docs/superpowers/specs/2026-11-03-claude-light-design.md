@@ -120,10 +120,26 @@ change an LED colour.
 | `SessionEnd` | — | `end` |
 | anything else | — | no request |
 
-3. POSTs to `http://claude-light.local/event` (override with env var
-   `CLAUDE_LIGHT_URL`) with a **1 s timeout**.
-4. Always exits 0 and prints nothing, so it can never block or alter Claude
+3. Checks the off switches (below); if any is set, exits immediately.
+4. **Never waits on the network.** It spawns a detached background process
+   that POSTs to `http://claude-light.local/event` (override with env var
+   `CLAUDE_LIGHT_URL`) with a 1 s timeout, then exits at once. Claude Code's
+   tool calls are never slowed, whether the board is on or off.
+5. Always exits 0 and prints nothing, so it can never block or alter Claude
    Code.
+
+#### Off switches and offline back-off
+
+- **Offline back-off (automatic):** if the background POST fails, it writes
+  `~/.claude/claude-light.offline` containing a timestamp. While that file is
+  less than **60 s** old, the hook sends nothing. After that it tries again;
+  the first success deletes the file. Turning the board back on therefore
+  needs no action — it resumes within about a minute.
+- **Manual off:** if `~/.claude/claude-light.off` exists, or the environment
+  variable `CLAUDE_LIGHT=off` is set, the hook does nothing until it is
+  removed / unset.
+- Claude Code's own `/hooks` menu and `"disableAllHooks": true` setting also
+  work, but affect all hooks, not just this one.
 
 Registered in the user-level `~/.claude/settings.json` so it covers every
 session. Exact hook payload field names will be checked against the current
@@ -131,7 +147,9 @@ Claude Code hooks documentation during implementation.
 
 ## Error handling
 
-- Board offline / unreachable → hook times out after 1 s, exits 0 silently.
+- Board offline / unreachable → background sender times out after 1 s and
+  writes the offline marker; the hook itself has already exited. Further
+  events are skipped for 60 s.
 - Malformed request → board returns 400, keeps running.
 - Uncaught exception in a board task → logged to serial; `main.py` restarts the
   task. A watchdog timer resets the board if the render loop stalls.
@@ -141,7 +159,10 @@ Claude Code hooks documentation during implementation.
 
 - **Unit tests (PC, pytest under CPython):** `sessions.py` (ordering, expiry,
   `since` rules, counting) and `animate.py` (stage boundaries, colour blend to
-  red, brightness ranges) and the hook's event→state mapping.
+  red, brightness ranges), the hook's event→state mapping, and its off
+  switches and 60 s offline back-off (with a fake clock and temp home dir).
+- **Hook latency:** with the board unplugged, time the hook — it must return
+  in well under 100 ms.
 - **On-device:** flash MicroPython, upload files, send fake events with `curl`
   using shortened thresholds; user confirms each reason colour and stage.
 - **End to end:** real Claude Code session with the hook installed — trigger
