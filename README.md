@@ -92,6 +92,53 @@ Things worth knowing about this board:
   never slowed.
 - Board at a fixed IP instead of mDNS: set `CLAUDE_LIGHT_URL=http://<ip>/event`.
 
+## Ideas for later
+
+Hardware the board already has:
+
+- **Snooze button.** Press the onboard BOOT button (GPIO0) to quiet the light
+  for 10 minutes, or to acknowledge the current session without answering it.
+- **Small OLED screen.** GPIO41/42 are free for an SSD1306 128×64 display
+  (the factory test already used them for one). It could show which project or
+  terminal is waiting and for how long, or a short excerpt of Claude's question.
+
+More light and sound:
+
+- **One LED per session.** Swap the single LED for a short WS2812 strip or ring
+  and give each waiting session its own pixel.
+- **A "working" state.** A faint, slow glow while Claude is busy, so you can
+  tell "working" from "idle" without looking at the screen.
+- **Sound.** A small piezo buzzer that chirps once when a session reaches
+  Frantic.
+- **An enclosure.** A 3D-printed diffuser or frosted cube turns the bare LED
+  into a proper desk lamp.
+
+Smarter behaviour:
+
+- **Quiet hours.** Stay dark overnight, or cap the brightness after a set time.
+  The board would fetch the real time over NTP.
+- **Per-project colours or patterns.** The hook already knows the working
+  directory, so different repos could show differently.
+- **Settings page.** Tune the timings and colours from a browser instead of
+  editing `config.py` and re-uploading.
+
+Reach and integration:
+
+- **No Python on the PC.** Claude Code also supports HTTP hooks, which could
+  POST straight to the board. The Python hook would then only be needed for
+  the off switch and the offline back-off.
+- **Away from home.** Relay events to the board over a VPN such as Tailscale,
+  via an always-on machine at home, so sessions on a laptop elsewhere still
+  reach it.
+- **Home Assistant / MQTT.** Publish the waiting state so other smart-home
+  devices can react: a smart bulb, a phone notification, a doorbell chime.
+- **A shared secret.** Add a simple token to the HTTP API if the board ever
+  sits on a network you don't fully trust.
+- **Battery power.** A LiPo and charger board would make it truly portable,
+  though Wi-Fi has to stay on, so expect hours, not days.
+- **5 GHz Wi-Fi.** Port to an ESP32-C5, the only ESP32 with dual-band Wi-Fi,
+  once MicroPython supports it well.
+
 ## Tests
 
 `python -m pytest` (pure logic and the hook; no hardware needed).
