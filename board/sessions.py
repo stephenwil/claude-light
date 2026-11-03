@@ -9,12 +9,20 @@ STATES = WAITING + ('clear', 'end')
 class Sessions:
     def __init__(self):
         self._t = {}  # session_id -> [reason, since]
+        self._seq = {}  # session_id -> [last fire time applied, seen at]
 
-    def apply(self, session, state, now):
+    def apply(self, session, state, now, seq=None):
+        # seq: when the hook fired (PC clock). Events can arrive out of
+        # order, so one older than the last applied for a session is dropped.
         if not session or not isinstance(session, str):
             raise ValueError('session required')
         if state not in STATES:
             raise ValueError('unknown state')
+        if seq is not None:
+            last = self._seq.get(session)
+            if last and seq < last[0]:
+                return
+            self._seq[session] = [seq, now]
         if state in WAITING:
             entry = self._t.get(session)
             if entry:
@@ -28,6 +36,9 @@ class Sessions:
         for sid in [s for s, (_, since) in self._t.items()
                     if now - since >= config.EXPIRE_S]:
             del self._t[sid]
+        for sid in [s for s, (_, seen) in self._seq.items()
+                    if now - seen >= config.EXPIRE_S]:
+            del self._seq[sid]
 
     def most_urgent(self, now):
         if not self._t:

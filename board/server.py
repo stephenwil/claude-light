@@ -23,7 +23,10 @@ async def _handle(reader, writer, sessions, clock, started):
         if method == 'POST' and path == '/event':
             try:
                 data = json.loads(await reader.readexactly(length) if length else b'')
-                sessions.apply(data.get('session'), data.get('state'), clock())
+                seq = data.get('t')
+                if seq is not None and not isinstance(seq, (int, float)):
+                    raise ValueError('bad t')
+                sessions.apply(data.get('session'), data.get('state'), clock(), seq)
                 out = _response(204, 'No Content')
             except Exception:
                 out = _response(400, 'Bad Request', b'{"error":"bad event"}')

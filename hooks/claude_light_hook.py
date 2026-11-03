@@ -100,7 +100,7 @@ def main(argv, stdin, env, home):
         session = payload.get('session_id')
         if not state or not session:
             return 0
-        body = json.dumps({'session': session, 'state': state})
+        body = json.dumps({'session': session, 'state': state, 't': time.time()})
         _spawn(env.get('CLAUDE_LIGHT_URL') or DEFAULT_URL, body, home)
     except Exception:
         pass

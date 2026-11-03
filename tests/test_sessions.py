@@ -44,3 +44,29 @@ def test_rejects_bad_input(bad):
 def test_snapshot():
     s = Sessions(); s.apply('a', 'question', 0)
     assert s.snapshot(12.7) == {'a': {'reason': 'question', 'waited_s': 12}}
+
+def test_stale_event_ignored_after_end():
+    # end (fired later) arrives before finished (fired earlier): finished must be dropped
+    s = Sessions()
+    s.apply('a', 'end', 10, seq=2.0)
+    s.apply('a', 'finished', 11, seq=1.0)
+    assert s.count() == 0
+
+def test_stale_waiting_does_not_override_newer_reason():
+    s = Sessions()
+    s.apply('a', 'question', 10, seq=5.0)
+    s.apply('a', 'permission', 11, seq=4.0)
+    assert s.most_urgent(12) == ('question', 2)
+
+def test_events_without_seq_always_apply():
+    s = Sessions()
+    s.apply('a', 'end', 10, seq=2.0)
+    s.apply('a', 'finished', 11)
+    assert s.count() == 1
+
+def test_seq_memory_expires():
+    s = Sessions()
+    s.apply('a', 'end', 0, seq=2.0)
+    s.expire(7200)
+    s.apply('a', 'finished', 7201, seq=1.0)
+    assert s.count() == 1

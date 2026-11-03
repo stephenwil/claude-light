@@ -46,3 +46,13 @@ def test_main_is_fast_and_silent(tmp_path, capsys):
     assert h.main([], stdin, {'CLAUDE_LIGHT_URL': 'http://10.255.255.1/event'}, tmp_path) == 0
     assert time.perf_counter() - t0 < 0.5
     assert capsys.readouterr().out == ''
+
+def test_main_body_carries_fire_time(tmp_path, monkeypatch):
+    sent = []
+    monkeypatch.setattr(h, '_spawn', lambda url, body, home: sent.append(body))
+    t0 = time.time()
+    h.main([], io.StringIO('{"hook_event_name":"Stop","session_id":"s1"}'), {}, tmp_path)
+    import json
+    body = json.loads(sent[0])
+    assert body['session'] == 's1' and body['state'] == 'finished'
+    assert t0 <= body['t'] <= time.time()
