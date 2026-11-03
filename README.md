@@ -93,6 +93,32 @@ Things worth knowing about this board:
 
 ## Setup
 
+### The easy way: ask Claude Code
+
+You don't have to run the steps below yourself. Clone this repo, open Claude
+Code in it, plug the board into your computer by its native USB port, and ask:
+
+> Set up Claude Light on my ESP32-S3 board.
+
+`CLAUDE.md` gives Claude the board details it needs. It will find the board's
+port, download and flash MicroPython, upload the code, check the board answers
+on your network, and install the hooks in your Claude Code settings. It shows
+you the settings change before saving it.
+
+What you do yourself:
+
+- **Plug in the board,** and move it to a USB charger afterwards if your PC's
+  USB port can't power it reliably.
+- **Write `board/secrets.py`** with your Wi-Fi name and password, from
+  `board/secrets.example.py`. Claude asks you to do this so your password
+  never goes through the chat.
+- **Approve** the flash (it erases whatever is on the board) and the change
+  to your Claude Code settings.
+- **Watch the LED** when Claude runs a quick demo, and say whether each state
+  looks right.
+
+### Doing it by hand
+
 1. Flash MicroPython (`ESP32_GENERIC_S3`, **SPIRAM_OCT** build) with esptool:
    `python -m esptool --chip esp32s3 --port COMx erase-flash`, then
    `python -m esptool --chip esp32s3 --port COMx write-flash -z 0 firmware.bin`.
