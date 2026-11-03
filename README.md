@@ -3,6 +3,12 @@
 An ESP32-S3 dev board whose onboard WS2812 RGB LED lights up when Claude Code
 is waiting on you. No extra hardware or wiring: the LED is already on the board.
 
+![The ESP32-S3 dev board on a breadboard, its onboard WS2812 LED glowing blue](docs/images/board.jpg)
+
+*The board in use. The bright blue LED next to the "RGB" label is the WS2812,
+showing blue for "Claude has finished and is waiting for you". The small red
+LED above it is the board's power light.*
+
 ## Why
 
 Claude Code often works for minutes at a time, so it's natural to switch to
